@@ -14,7 +14,7 @@ def clean_logs():
     shutil.rmtree(LOG_DIR, ignore_errors=True)
 
 
-def download_and_read(urls):
+""" def download_and_read(urls):
     texts = []
     for i, url in enumerate(urls):
         p = tf.keras.utils.get_file("ex1-{:d}.txt".format(i), url,
@@ -25,10 +25,11 @@ def download_and_read(urls):
         # remove newlines
         text = text.replace('\n', ' ')
         text = re.sub(r'\s+', " ", text)
-        # add it to the list
-        texts.extend(text)
-    return texts
-
+        # Split the text into words - key change for word-level model
+        words = text.split()
+        # add it to the list - now adding words instead of characters
+        texts.extend(words)
+    return texts """
 
 def split_train_labels(sequence):
     input_seq = sequence[0:-1]
@@ -86,12 +87,33 @@ def generate_text(model, prefix_string, char2idx, idx2char,
 
     return prefix_string + "".join(text_generated)
 
+def download_and_read(file_paths):
+    texts = []
+    for i, file_path in enumerate(file_paths):
+        # tf.keras.utils.get_file() is commented out and replaced with direct file reading
+        # p = tf.keras.utils.get_file("ex1-{:d}.txt".format(i), url, cache_dir=".")
+        # Instead, directly read from the local file path
+        text = open(file_path, mode="r", encoding="utf-8").read()
+        # rest of preprocessing remains the same
+        text = text.replace("\ufeff", "")
+        text = text.replace('\n', ' ')
+        text = re.sub(r'\s+', " ", text)
+        words = text.split()  # Using word-level from the previous modification
+        texts.extend(words)
+    return texts
 
-# download and read into local data structure (list of chars)
+
+# Replace with local file paths:
+texts = download_and_read([
+    "./data/pg28885.txt",  # Local path to the first file
+    "./data/12-0.txt"      # Local path to the second file
+])
+
+""" # download and read into local data structure (list of chars)
 texts = download_and_read([
     "http://www.gutenberg.org/cache/epub/28885/pg28885.txt",
     "https://www.gutenberg.org/files/12/12-0.txt"
-])
+]) """
 clean_logs()
 
 # create the vocabulary
