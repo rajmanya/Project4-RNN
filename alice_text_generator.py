@@ -67,7 +67,8 @@ class CharGenModel(tf.keras.Model):
         x = self.dense_layer(x)
         return x
 
-
+    def reset_states(self):
+        self.rnn_layer.reset_states()
 def loss(labels, predictions):
     return tf.losses.sparse_categorical_crossentropy(
         labels,
@@ -76,22 +77,26 @@ def loss(labels, predictions):
     )
 
 
-def generate_text(model, prefix_string, char2idx, idx2char,
-        num_chars_to_generate=1000, temperature=1.0):
-    input = [char2idx[s] for s in prefix_string]
-    input = tf.expand_dims(input, 0)
-    text_generated = []
-    model.reset_states()
-    for i in range(num_chars_to_generate):
-        preds = model(input)
-        preds = tf.squeeze(preds, 0) / temperature
-        # predict char returned by model
-        pred_id = tf.random.categorical(preds, num_samples=1)[-1, 0].numpy()
-        text_generated.append(idx2char[pred_id])
-        # pass the prediction as the next input to the model
-        input = tf.expand_dims([pred_id], 0)
-
-    return prefix_string + "".join(text_generated)
+def generate_text(model, prefix_word, char2idx, idx2char,
+        num_words_to_generate=100, temperature=1.0):
+    # For word-level model, prefix should be a single word
+    if prefix_word in char2idx:
+        input = [char2idx[prefix_word]]
+        input = tf.expand_dims(input, 0)
+        text_generated = []
+        model.reset_states()
+        for i in range(num_words_to_generate):
+            preds = model(input)
+            preds = tf.squeeze(preds, 0) / temperature
+            # predict word returned by model
+            pred_id = tf.random.categorical(preds, num_samples=1)[-1, 0].numpy()
+            text_generated.append(idx2char[pred_id])
+            # pass the prediction as the next input to the model
+            input = tf.expand_dims([pred_id], 0)
+            
+        return prefix_word + " " + " ".join(text_generated)
+    else:
+        return f"Error: '{prefix_word}' not in vocabulary. Try a different starting word."
 
 def download_and_read(file_paths):
     texts = []
@@ -193,6 +198,6 @@ for i in range(num_epochs // 10):
     gen_model.build(input_shape=(1, seq_length))
     gen_model.load_weights(checkpoint_file)
 
-    print("after epoch: {:d}".format(i+1)*10)
-    print(generate_text(gen_model, "Alice ", char2idx, idx2char))
+    print(f"after epoch: {(i+1)*10}")
+    print(generate_text(gen_model, "Alice", char2idx, idx2char))
     print("---")
