@@ -4,7 +4,7 @@ import re
 import shutil
 import tensorflow as tf
 
-DATA_DIR = "./data"
+DATA_DIR = "./"
 CHECKPOINT_DIR = os.path.join(DATA_DIR, "checkpoints")
 LOG_DIR = os.path.join(DATA_DIR, "logs")
 
@@ -13,6 +13,12 @@ def clean_logs():
     shutil.rmtree(CHECKPOINT_DIR, ignore_errors=True)
     shutil.rmtree(LOG_DIR, ignore_errors=True)
 
+# Add this new function to create directories
+def create_directories():
+    """Create necessary directories for model checkpoints and logs"""
+    os.makedirs(DATA_DIR, exist_ok=True)
+    os.makedirs(CHECKPOINT_DIR, exist_ok=True)
+    os.makedirs(LOG_DIR, exist_ok=True)
 
 """ def download_and_read(urls):
     texts = []
@@ -61,7 +67,8 @@ class CharGenModel(tf.keras.Model):
         x = self.dense_layer(x)
         return x
 
-
+    def reset_states(self):
+        self.rnn_layer.reset_states()
 def loss(labels, predictions):
     return tf.losses.sparse_categorical_crossentropy(
         labels,
@@ -70,22 +77,26 @@ def loss(labels, predictions):
     )
 
 
-def generate_text(model, prefix_string, char2idx, idx2char,
-        num_chars_to_generate=1000, temperature=1.0):
-    input = [char2idx[s] for s in prefix_string]
-    input = tf.expand_dims(input, 0)
-    text_generated = []
-    model.reset_states()
-    for i in range(num_chars_to_generate):
-        preds = model(input)
-        preds = tf.squeeze(preds, 0) / temperature
-        # predict char returned by model
-        pred_id = tf.random.categorical(preds, num_samples=1)[-1, 0].numpy()
-        text_generated.append(idx2char[pred_id])
-        # pass the prediction as the next input to the model
-        input = tf.expand_dims([pred_id], 0)
-
-    return prefix_string + "".join(text_generated)
+def generate_text(model, prefix_word, char2idx, idx2char,
+        num_words_to_generate=100, temperature=1.0):
+    # For word-level model, prefix should be a single word
+    if prefix_word in char2idx:
+        input = [char2idx[prefix_word]]
+        input = tf.expand_dims(input, 0)
+        text_generated = []
+        model.reset_states()
+        for i in range(num_words_to_generate):
+            preds = model(input)
+            preds = tf.squeeze(preds, 0) / temperature
+            # predict word returned by model
+            pred_id = tf.random.categorical(preds, num_samples=1)[-1, 0].numpy()
+            text_generated.append(idx2char[pred_id])
+            # pass the prediction as the next input to the model
+            input = tf.expand_dims([pred_id], 0)
+            
+        return prefix_word + " " + " ".join(text_generated)
+    else:
+        return f"Error: '{prefix_word}' not in vocabulary. Try a different starting word."
 
 def download_and_read(file_paths):
     texts = []
@@ -105,8 +116,8 @@ def download_and_read(file_paths):
 
 # Replace with local file paths:
 texts = download_and_read([
-    "./data/pg28885.txt",  # Local path to the first file
-    "./data/12-0.txt"      # Local path to the second file
+    "./pg28885.txt",  # Local path to the first file
+    "./12-0.txt"      # Local path to the second file
 ])
 
 """ # download and read into local data structure (list of chars)
@@ -115,6 +126,7 @@ texts = download_and_read([
     "https://www.gutenberg.org/files/12/12-0.txt"
 ]) """
 clean_logs()
+create_directories() 
 
 # create the vocabulary
 vocab = sorted(set(texts))
@@ -178,14 +190,14 @@ for i in range(num_epochs // 10):
         # callbacks=[checkpoint_callback, tensorboard_callback]
     )
     checkpoint_file = os.path.join(
-        CHECKPOINT_DIR, "model_epoch_{:d}".format(i+1))
+        CHECKPOINT_DIR, "model_epoch_{:d}.weights.h5".format(i+1))
     model.save_weights(checkpoint_file)
 
     # create a generative model using the trained model so far
     gen_model = CharGenModel(vocab_size, seq_length, embedding_dim)
-    gen_model.load_weights(checkpoint_file)
     gen_model.build(input_shape=(1, seq_length))
+    gen_model.load_weights(checkpoint_file)
 
-    print("after epoch: {:d}".format(i+1)*10)
-    print(generate_text(gen_model, "Alice ", char2idx, idx2char))
+    print(f"after epoch: {(i+1)*10}")
+    print(generate_text(gen_model, "Alice", char2idx, idx2char))
     print("---")
