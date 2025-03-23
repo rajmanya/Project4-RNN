@@ -25,9 +25,17 @@ def download_and_read(urls):
         # remove newlines
         text = text.replace('\n', ' ')
         text = re.sub(r'\s+', " ", text)
-        # add it to the list
-        texts.extend(text)
+        # Split the text into words - key change for word-level model
+        words = text.split()
+        # add it to the list - now adding words instead of characters
+        texts.extend(words)
     return texts
+
+# Later in the code where we create vocabulary:
+# Before: vocab = sorted(set(texts))  # Character vocabulary
+# After (for word-level): 
+vocab = sorted(set(texts))  # Now this creates a word vocabulary
+print("vocab size: {:d}".format(len(vocab)))  # Will be much larger than char vocab
 
 
 def split_train_labels(sequence):
