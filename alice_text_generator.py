@@ -105,8 +105,8 @@ def download_and_read(file_paths):
 
 # Replace with local file paths:
 texts = download_and_read([
-    "./data/pg28885.txt",  # Local path to the first file
-    "./data/12-0.txt"      # Local path to the second file
+    "./pg28885.txt",  # Local path to the first file
+    "./12-0.txt"      # Local path to the second file
 ])
 
 """ # download and read into local data structure (list of chars)
