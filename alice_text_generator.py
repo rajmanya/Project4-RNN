@@ -4,7 +4,7 @@ import re
 import shutil
 import tensorflow as tf
 
-DATA_DIR = "./data"
+DATA_DIR = "./"
 CHECKPOINT_DIR = os.path.join(DATA_DIR, "checkpoints")
 LOG_DIR = os.path.join(DATA_DIR, "logs")
 
@@ -190,8 +190,8 @@ for i in range(num_epochs // 10):
 
     # create a generative model using the trained model so far
     gen_model = CharGenModel(vocab_size, seq_length, embedding_dim)
-    gen_model.load_weights(checkpoint_file)
     gen_model.build(input_shape=(1, seq_length))
+    gen_model.load_weights(checkpoint_file)
 
     print("after epoch: {:d}".format(i+1)*10)
     print(generate_text(gen_model, "Alice ", char2idx, idx2char))
