@@ -77,7 +77,7 @@ def loss(labels, predictions):
         from_logits=True
     )
 
-def experiment_with_temperatures(model, vocab_size, seq_length, embedding_dim, char2idx, idx2char):
+def experiment_with_temperatures(model, vocab_size, seq_length, embedding_dim, char2idx, idx2char, checkpoint_file):
     """Experiment with different temperature values for text generation"""
     print("\n==== EXPERIMENT LEAD: TEMPERATURE VARIATION EXPERIMENTS ====")
     
@@ -88,16 +88,9 @@ def experiment_with_temperatures(model, vocab_size, seq_length, embedding_dim, c
     gen_model = CharGenModel(vocab_size, seq_length, embedding_dim)
     gen_model.build(input_shape=(1, seq_length))
     
-    # Use the latest checkpoint if available, or use the current model weights
-    try:
-        latest_checkpoint = os.path.join(CHECKPOINT_DIR, "model_epoch_5.weights.h5")
-        gen_model.load_weights(latest_checkpoint)
-        print(f"Loaded weights from {latest_checkpoint}")
-    except:
-        # If no checkpoint is available, use the current model weights
-        model.save_weights("temp_weights.h5")
-        gen_model.load_weights("temp_weights.h5")
-        print("Used current model weights")
+    # Load weights from the provided checkpoint
+    gen_model.load_weights(checkpoint_file)
+    print(f"Loaded weights from {checkpoint_file}")
     
     # Starting word for generation
     start_word = "Alice"
@@ -324,4 +317,5 @@ for i in range(num_epochs // 10):
     # Add the temperature experiment after the first training cycle (i=0)
     if i == 0:
         # Run temperature experiments
-        experiment_with_temperatures(model, vocab_size, seq_length, embedding_dim, char2idx, idx2char)
+        experiment_with_temperatures(model, vocab_size, seq_length, embedding_dim, 
+                                char2idx, idx2char, checkpoint_file)
