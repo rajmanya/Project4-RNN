@@ -98,7 +98,59 @@ def generate_text(model, prefix_word, char2idx, idx2char,
         return prefix_word + " " + " ".join(text_generated)
     else:
         return f"Error: '{prefix_word}' not in vocabulary. Try a different starting word."
-
+def experiment_with_optimizers():
+    """Compare performance of different optimizers for one epoch"""
+    print("\n==== EXPERIMENT LEAD: OPTIMIZER COMPARISON ====")
+    
+    # Create a fresh model for fair comparison
+    base_model = CharGenModel(vocab_size, seq_length, embedding_dim)
+    base_model.build(input_shape=(batch_size, seq_length))
+    
+    # Dictionary to store results
+    optimizer_results = {}
+    
+    # List of optimizers to test
+    optimizers = {
+        'Adam': tf.optimizers.Adam(learning_rate=0.001),
+        'RMSprop': tf.optimizers.RMSprop(learning_rate=0.001)
+    }
+    
+    # Test each optimizer
+    for name, optimizer in optimizers.items():
+        print(f"\nTesting optimizer: {name}")
+        
+        # Reset model weights for fair comparison
+        model = CharGenModel(vocab_size, seq_length, embedding_dim)
+        model.build(input_shape=(batch_size, seq_length))
+        
+        # Compile with current optimizer
+        model.compile(optimizer=optimizer, loss=loss)
+        
+        # Train for one epoch
+        history = model.fit(
+            dataset.repeat(),
+            epochs=1,
+            steps_per_epoch=steps_per_epoch
+        )
+        
+        # Store final loss
+        final_loss = history.history['loss'][0]
+        optimizer_results[name] = final_loss
+        print(f"Final loss with {name}: {final_loss:.4f}")
+    
+    # Compare results
+    print("\n==== OPTIMIZER COMPARISON RESULTS ====")
+    for name, loss_value in optimizer_results.items():
+        print(f"{name} optimizer - Final loss: {loss_value:.4f}")
+    
+    # Determine the better performer
+    best_optimizer = min(optimizer_results, key=optimizer_results.get)
+    improvement = abs(optimizer_results['Adam'] - optimizer_results['RMSprop'])
+    percent_diff = (improvement / max(optimizer_results.values())) * 100
+    
+    print(f"\nThe {best_optimizer} optimizer performed better with a loss difference of {improvement:.4f} ({percent_diff:.2f}%)")
+    
+    return optimizer_results
 def download_and_read(file_paths):
     texts = []
     for i, file_path in enumerate(file_paths):
@@ -177,7 +229,6 @@ def experiment_with_parameters(seq_len, batch_sz):
     exp_model = CharGenModel(vocab_size, seq_len, embedding_dim)
     exp_model.build(input_shape=(batch_sz, seq_len))
     exp_model.compile(optimizer=tf.optimizers.Adam(), loss=loss)
-    
     # Measure training time for one epoch
     start_time = time.time()
     exp_history = exp_model.fit(
@@ -245,7 +296,8 @@ assert(pred_batch.shape[1] == seq_length)
 assert(pred_batch.shape[2] == vocab_size)
 
 model.compile(optimizer=tf.optimizers.Adam(), loss=loss)
-
+# Run the optimizer experiment - call this before the main training loop
+experiment_with_optimizers()
 # we will train our model for 50 epochs, and after every 10 epochs
 # we want to see how well it will generate text
 num_epochs = 50
