@@ -137,6 +137,10 @@ print("vocab size: {:d}".format(len(vocab)))
 char2idx = {c:i for i, c in enumerate(vocab)}
 idx2char = {i:c for c, i in char2idx.items()}
 
+# define network
+vocab_size = len(vocab)
+embedding_dim = 256
+
 # numericize the texts
 texts_as_ints = np.array([char2idx[c] for c in texts])
 data = tf.data.Dataset.from_tensor_slices(texts_as_ints)
@@ -226,9 +230,6 @@ steps_per_epoch = len(texts) // seq_length // batch_size
 dataset = sequences.shuffle(10000).batch(batch_size, drop_remainder=True)
 print(dataset)
 
-# define network
-vocab_size = len(vocab)
-embedding_dim = 256
 
 model = CharGenModel(vocab_size, seq_length, embedding_dim)
 model.build(input_shape=(batch_size, seq_length))
