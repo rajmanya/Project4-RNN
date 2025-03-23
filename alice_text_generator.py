@@ -13,6 +13,12 @@ def clean_logs():
     shutil.rmtree(CHECKPOINT_DIR, ignore_errors=True)
     shutil.rmtree(LOG_DIR, ignore_errors=True)
 
+# Add this new function to create directories
+def create_directories():
+    """Create necessary directories for model checkpoints and logs"""
+    os.makedirs(DATA_DIR, exist_ok=True)
+    os.makedirs(CHECKPOINT_DIR, exist_ok=True)
+    os.makedirs(LOG_DIR, exist_ok=True)
 
 """ def download_and_read(urls):
     texts = []
@@ -115,6 +121,7 @@ texts = download_and_read([
     "https://www.gutenberg.org/files/12/12-0.txt"
 ]) """
 clean_logs()
+create_directories() 
 
 # create the vocabulary
 vocab = sorted(set(texts))
@@ -179,7 +186,7 @@ for i in range(num_epochs // 10):
     )
     checkpoint_file = os.path.join(
         CHECKPOINT_DIR, "model_epoch_{:d}.weights.h5".format(i+1))
-    model.save_weights(checkpoint_file)
+    """ model.save_weights(checkpoint_file) """
 
     # create a generative model using the trained model so far
     gen_model = CharGenModel(vocab_size, seq_length, embedding_dim)
