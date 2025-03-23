@@ -178,7 +178,7 @@ for i in range(num_epochs // 10):
         # callbacks=[checkpoint_callback, tensorboard_callback]
     )
     checkpoint_file = os.path.join(
-        CHECKPOINT_DIR, "model_epoch_{:d}".format(i+1))
+        CHECKPOINT_DIR, "model_epoch_{:d}.weights.h5".format(i+1))
     model.save_weights(checkpoint_file)
 
     # create a generative model using the trained model so far
