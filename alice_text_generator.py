@@ -35,7 +35,7 @@ def download_and_read(urls):
 # Before: vocab = sorted(set(texts))  # Character vocabulary
 # After (for word-level): 
 vocab = sorted(set(texts))  # Now this creates a word vocabulary
-print("vocab size: {:d}".format(len(vocab)))  # Will be much larger than char vocab
+print("vocab size: {:d}".format(len(vocab)))  # Will be much larger than char vocab 
 
 
 def split_train_labels(sequence):
