@@ -3,6 +3,7 @@ import numpy as np
 import re
 import shutil
 import tensorflow as tf
+import time
 
 DATA_DIR = "./"
 CHECKPOINT_DIR = os.path.join(DATA_DIR, "checkpoints")
@@ -152,6 +153,71 @@ for input_seq, output_seq in sequences.take(1):
         "".join([idx2char[i] for i in input_seq.numpy()])))
     print("output:[{:s}]".format(
         "".join([idx2char[i] for i in output_seq.numpy()])))
+
+def experiment_with_parameters(seq_len, batch_sz):
+    """Experiment with different sequence lengths and batch sizes"""
+    print(f"\n--- EXPERIMENT: seq_length={seq_len}, batch_size={batch_sz} ---")
+    
+    # Create sequences with new sequence length
+    exp_sequences = data.batch(seq_len + 1, drop_remainder=True)
+    exp_sequences = exp_sequences.map(split_train_labels)
+    
+    # Calculate new steps per epoch
+    exp_steps_per_epoch = len(texts) // seq_len // batch_sz
+    print(f"Steps per epoch: {exp_steps_per_epoch}")
+    
+    # Create dataset with new batch size
+    exp_dataset = exp_sequences.shuffle(10000).batch(batch_sz, drop_remainder=True)
+    
+    # Build model
+    exp_model = CharGenModel(vocab_size, seq_len, embedding_dim)
+    exp_model.build(input_shape=(batch_sz, seq_len))
+    exp_model.compile(optimizer=tf.optimizers.Adam(), loss=loss)
+    
+    # Measure training time for one epoch
+    start_time = time.time()
+    exp_history = exp_model.fit(
+        exp_dataset.repeat(),
+        epochs=1,
+        steps_per_epoch=exp_steps_per_epoch
+    )
+    end_time = time.time()
+    
+    training_time = end_time - start_time
+    final_loss = exp_history.history['loss'][0]
+    
+    print(f"Training time: {training_time:.2f} seconds")
+    print(f"Final loss: {final_loss:.4f}")
+    
+    return training_time, final_loss
+
+# Experiment with different sequence lengths and batch sizes
+print("\n==== EXPERIMENT LEAD: SEQUENCE LENGTH AND BATCH SIZE EXPERIMENTS ====")
+
+# Smaller parameters
+small_seq_length = 50
+small_batch_size = 32
+small_time, small_loss = experiment_with_parameters(small_seq_length, small_batch_size)
+
+# Larger parameters
+large_seq_length = 150
+large_batch_size = 128
+large_time, large_loss = experiment_with_parameters(large_seq_length, large_batch_size)
+
+# Results comparison
+print("\n==== EXPERIMENT RESULTS ====")
+print(f"Small parameters (seq_length={small_seq_length}, batch_size={small_batch_size}):")
+print(f"  - Training time: {small_time:.2f} seconds")
+print(f"  - Final loss: {small_loss:.4f}")
+print(f"Large parameters (seq_length={large_seq_length}, batch_size={large_batch_size}):")
+print(f"  - Training time: {large_time:.2f} seconds")
+print(f"  - Final loss: {large_loss:.4f}")
+print(f"Time ratio (large/small): {large_time/small_time:.2f}x")
+print("\n==== CONTINUING WITH DEFAULT PARAMETERS ====")
+
+# Reset to original value
+seq_length = 100  # Reset to original value
+batch_size = 64   # Reset to original value
 
 # set up for training
 # batches: [None, 64, 100]
