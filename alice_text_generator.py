@@ -77,6 +77,52 @@ def loss(labels, predictions):
         from_logits=True
     )
 
+def experiment_with_temperatures(model, vocab_size, seq_length, embedding_dim, char2idx, idx2char, checkpoint_file):
+    """Experiment with different temperature values for text generation"""
+    print("\n==== EXPERIMENT LEAD: TEMPERATURE VARIATION EXPERIMENTS ====")
+    
+    # Define temperature values to test
+    temperatures = [0.5, 1.0, 1.5]
+    
+    # Create a generation model
+    gen_model = CharGenModel(vocab_size, seq_length, embedding_dim)
+    gen_model.build(input_shape=(1, seq_length))
+    
+    # Load weights from the provided checkpoint
+    gen_model.load_weights(checkpoint_file)
+    print(f"Loaded weights from {checkpoint_file}")
+    
+    # Starting word for generation
+    start_word = "Alice"
+    if start_word not in char2idx:
+        start_word = list(char2idx.keys())[0]  # Fallback to first word in vocabulary
+    
+    # Generate text with different temperatures
+    print("\nGenerating text samples with different temperatures:")
+    
+    for temp in temperatures:
+        print(f"\n--- Temperature: {temp} ---")
+        generated_text = generate_text(
+            gen_model, 
+            start_word, 
+            char2idx, 
+            idx2char,
+            num_words_to_generate=50,  # Shorter for easier comparison
+            temperature=temp
+        )
+        
+        print(generated_text)
+    
+    # Analysis and observations
+    print("\n==== TEMPERATURE EXPERIMENT ANALYSIS ====")
+    print("Temperature 0.5 (Low): More deterministic, predictable text generation.")
+    print("Temperature 1.0 (Medium): Balanced between predictability and creativity.")
+    print("Temperature 1.5 (High): More diverse and unpredictable output, potentially less coherent.")
+    
+    return temperatures
+
+# This function should be called after some training but before the end of your script
+# For example, after the first 10 epochs of training
 
 def generate_text(model, prefix_word, char2idx, idx2char,
         num_words_to_generate=100, temperature=1.0):
@@ -320,3 +366,8 @@ for i in range(num_epochs // 10):
     print(f"after epoch: {(i+1)*10}")
     print(generate_text(gen_model, "Alice", char2idx, idx2char))
     print("---")
+    # Add the temperature experiment after the first training cycle (i=0)
+    if i == 0:
+        # Run temperature experiments
+        experiment_with_temperatures(model, vocab_size, seq_length, embedding_dim, 
+                                char2idx, idx2char, checkpoint_file)
